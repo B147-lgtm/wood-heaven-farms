@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BRAND_ASSETS } from '../constants.tsx';
-import { supabase } from '../lib/supabase.ts';
+import { BRAND_ASSETS } from '../constants';
+import { supabase } from '../lib/supabase';
 
 const Navbar = ({ settings }: { settings: any }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,7 +14,7 @@ const Navbar = ({ settings }: { settings: any }) => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: any) => {
       setIsAdmin(!!session);
     });
 
@@ -176,7 +175,7 @@ export const Layout = ({ children }: { children?: React.ReactNode }) => {
   const [settings, setSettings] = useState<any>(null);
 
   useEffect(() => {
-    supabase.from('site_settings').select('*').eq('id', 1).single().then(({ data }) => {
+    supabase.from('site_settings').select('*').eq('id', 1).single().then(({ data }: any) => {
       if (data) setSettings(data);
     });
   }, []);

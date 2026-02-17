@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../../../lib/supabase/client.ts';
+import { supabase } from '../../../lib/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
 const CATEGORIES = ['Rooms', 'Pool', 'Lawn', 'Night Vibes', 'Bar Garden'];
@@ -24,13 +24,13 @@ export default function AdminGalleryPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: any) => {
       setSession(session);
       setLoading(false);
       if (!session) navigate('/admin');
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setSession(session);
       if (!session) navigate('/admin');
     });
@@ -38,11 +38,10 @@ export default function AdminGalleryPage() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // Full implementation of upload logic
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-    // Fix: Explicitly cast Array.from result to File[] to ensure correct type inference during mapping
-    const newFiles = Array.from(e.target.files) as File[];
-    const newJobs: UploadJob[] = newFiles.map(file => ({
+    const newJobs: UploadJob[] = Array.from(e.target.files).map(file => ({
       id: Math.random().toString(36).substr(2, 9),
       file,
       title: file.name.split('.')[0],
@@ -53,188 +52,94 @@ export default function AdminGalleryPage() {
     setJobs(prev => [...prev, ...newJobs]);
   };
 
-  const updateJob = (id: string, updates: Partial<UploadJob>) => {
-    setJobs(prev => prev.map(j => j.id === id ? { ...j, ...updates } : j));
-  };
+  const uploadFile = async (job: UploadJob) => {
+    setJobs(prev => prev.map(j => j.id === job.id ? { ...j, status: 'uploading' } : j));
 
-  const startUploads = async () => {
-    const pendingJobs = jobs.filter(j => j.status === 'pending');
-    
-    for (const job of pendingJobs) {
-      updateJob(job.id, { status: 'uploading' });
-      
-      try {
-        const fileExt = job.file.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `memories/${fileName}`;
+    try {
+      const fileExt = job.file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `gallery/${fileName}`;
 
-        // 1. Storage Upload
-        const { error: uploadError } = await supabase.storage
-          .from('gallery')
-          .upload(filePath, job.file, {
-            upsert: false
-          });
+      const { error: uploadError } = await supabase.storage
+        .from('gallery')
+        .upload(filePath, job.file);
 
-        if (uploadError) throw uploadError;
+      if (uploadError) throw uploadError;
 
-        // 2. Public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('gallery')
-          .getPublicUrl(filePath);
+      const { data: { publicUrl } } = supabase.storage
+        .from('gallery')
+        .getPublicUrl(filePath);
 
-        // 3. Database Entry
-        const { error: dbError } = await supabase.from('gallery_images').insert([{
+      const { error: dbError } = await supabase
+        .from('gallery_images')
+        .insert([{
           title: job.title,
           category: job.category,
           storage_path: filePath,
-          url: publicUrl,
-          sort_order: 0 // Default or handle logic for order
+          url: publicUrl
         }]);
 
-        if (dbError) throw dbError;
+      if (dbError) throw dbError;
 
-        updateJob(job.id, { status: 'completed', progress: 100 });
-      } catch (err: any) {
-        updateJob(job.id, { status: 'error', error: err.message });
-      }
+      setJobs(prev => prev.map(j => j.id === job.id ? { ...j, status: 'completed', progress: 100 } : j));
+    } catch (err: any) {
+      setJobs(prev => prev.map(j => j.id === job.id ? { ...j, status: 'error', error: err.message } : j));
     }
   };
 
-  const clearCompleted = () => {
-    setJobs(prev => prev.filter(j => j.status !== 'completed'));
+  const startAll = () => {
+    jobs.filter(j => j.status === 'pending').forEach(uploadFile);
   };
 
-  if (loading) return <div className="min-h-screen bg-beige flex items-center justify-center font-serif text-2xl">Verifying Access...</div>;
+  if (loading) return null;
 
   return (
-    <div className="pt-32 pb-20 min-h-screen bg-beige px-6">
-      <div className="container mx-auto max-w-5xl">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
-          <div>
-            <span className="text-[#c5a059] text-[10px] font-bold uppercase tracking-[0.4em] mb-2 block">Admin Portal</span>
-            <h1 className="text-5xl font-serif text-forest">Gallery Manager</h1>
-          </div>
-          <div className="flex gap-4">
-            <button 
-              onClick={() => navigate('/admin')}
-              className="px-6 py-3 border border-forest/20 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-forest hover:text-white transition-all"
+    <div className="pt-24 min-h-screen bg-beige p-6">
+      <div className="container mx-auto">
+        <div className="bg-white rounded-[3rem] shadow-xl p-10 mb-8">
+          <h1 className="text-4xl font-serif text-forest mb-8">Gallery Manager</h1>
+          
+          <div className="flex flex-wrap gap-6 items-center mb-10">
+            <select 
+              value={globalCategory} 
+              onChange={e => setGlobalCategory(e.target.value)}
+              className="bg-beige border-none rounded-xl px-6 py-3 text-sm font-bold uppercase tracking-widest text-forest"
             >
-              Back to Dashboard
-            </button>
+              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="px-8 py-3 bg-forest text-white rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-[#c5a059] transition-all shadow-xl"
+              className="bg-forest text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-widest"
             >
-              Select Photos
+              Select Images
             </button>
-            <input 
-              type="file" 
-              multiple 
-              accept="image/*" 
-              hidden 
-              ref={fileInputRef} 
-              onChange={handleFileSelect} 
-            />
+            <button 
+              onClick={startAll}
+              className="bg-[#c5a059] text-white px-8 py-3 rounded-full text-xs font-bold uppercase tracking-widest"
+            >
+              Upload All
+            </button>
+            <input type="file" multiple ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept="image/*" />
           </div>
-        </header>
 
-        <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-white/10 p-8 md:p-12">
-          {jobs.length === 0 ? (
-            <div className="py-32 text-center">
-              <div className="w-20 h-20 bg-beige rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-forest/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-              </div>
-              <h3 className="text-xl font-serif text-forest/40">No photos selected for upload</h3>
-              <p className="text-xs text-earth/30 uppercase tracking-widest mt-2">Pick memories to publish to heaven.</p>
-            </div>
-          ) : (
-            <div className="space-y-8">
-              <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-beige/50 p-6 rounded-3xl">
-                <div className="flex items-center gap-4">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-earth/60">Bulk Category</label>
-                  <select 
-                    className="bg-white border-none rounded-full px-6 py-2 text-xs font-bold"
-                    value={globalCategory}
-                    onChange={(e) => {
-                      setGlobalCategory(e.target.value);
-                      setJobs(prev => prev.map(j => j.status === 'pending' ? { ...j, category: e.target.value } : j));
-                    }}
-                  >
-                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+          <div className="space-y-4">
+            {jobs.map(job => (
+              <div key={job.id} className="flex items-center gap-6 p-4 bg-beige/50 rounded-2xl border border-white">
+                <div className="w-16 h-16 bg-white rounded-xl overflow-hidden shadow-sm">
+                  <img src={URL.createObjectURL(job.file)} className="w-full h-full object-cover" />
                 </div>
-                <div className="flex gap-4">
-                  <button 
-                    onClick={clearCompleted}
-                    className="text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-600"
-                  >
-                    Clear Completed
-                  </button>
-                  <button 
-                    onClick={startUploads}
-                    className="bg-forest text-white px-10 py-3 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg hover:bg-earth transition-all"
-                  >
-                    Start Batch Upload ({jobs.filter(j => j.status === 'pending').length})
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4">
-                {jobs.map(job => (
-                  <div key={job.id} className={`p-4 rounded-3xl border transition-all flex items-center gap-6 ${job.status === 'completed' ? 'bg-green-50 border-green-100' : 'bg-white border-beige'}`}>
-                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-beige flex-shrink-0">
-                      <img src={URL.createObjectURL(job.file)} className="w-full h-full object-cover" alt="" />
-                    </div>
-                    
-                    <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <input 
-                        type="text" 
-                        value={job.title}
-                        onChange={(e) => updateJob(job.id, { title: e.target.value })}
-                        disabled={job.status !== 'pending'}
-                        className="bg-beige/40 border-none rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-forest"
-                        placeholder="Image Title"
-                      />
-                      <select 
-                        value={job.category}
-                        onChange={(e) => updateJob(job.id, { category: e.target.value })}
-                        disabled={job.status !== 'pending'}
-                        className="bg-beige/40 border-none rounded-xl px-4 py-2 text-xs font-bold"
-                      >
-                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    </div>
-
-                    <div className="w-32 flex flex-col items-end gap-2">
-                      <span className={`text-[9px] font-bold uppercase tracking-widest ${
-                        job.status === 'completed' ? 'text-green-500' : 
-                        job.status === 'error' ? 'text-red-500' : 'text-forest/40'
-                      }`}>
-                        {job.status}
-                      </span>
-                      {job.status === 'uploading' && (
-                        <div className="w-full h-1 bg-beige rounded-full overflow-hidden">
-                          <div className="h-full bg-forest animate-pulse w-1/2" />
-                        </div>
-                      )}
-                      {job.status === 'error' && (
-                        <p className="text-[8px] text-red-400 line-clamp-1">{job.error}</p>
-                      )}
-                    </div>
-
-                    {job.status === 'pending' && (
-                      <button 
-                        onClick={() => setJobs(prev => prev.filter(j => j.id !== job.id))}
-                        className="p-2 text-earth/20 hover:text-red-500 transition-colors"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                      </button>
-                    )}
+                <div className="flex-grow">
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="font-bold text-sm text-forest">{job.title}</p>
+                    <span className={`text-[10px] uppercase tracking-widest font-bold ${job.status === 'completed' ? 'text-green-600' : 'text-earth/40'}`}>{job.status}</span>
                   </div>
-                ))}
+                  <div className="w-full bg-white h-2 rounded-full overflow-hidden">
+                    <div className={`h-full transition-all ${job.status === 'error' ? 'bg-red-500' : 'bg-forest'}`} style={{ width: `${job.status === 'completed' ? 100 : job.progress}%` }} />
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       </div>
     </div>

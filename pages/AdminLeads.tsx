@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -17,7 +16,6 @@ export const AdminLeads: React.FC = () => {
     });
   }, [navigate]);
 
-  // Full implementation of fetch leads logic
   const fetchLeads = async () => {
     setLoading(true);
     try {
@@ -40,7 +38,7 @@ export const AdminLeads: React.FC = () => {
     if (!error) fetchLeads();
   };
 
-  if (loading) return null;
+  if (loading) return <div className="p-20 text-center font-serif">Connecting to CRM...</div>;
 
   return (
     <div className="pt-24 min-h-screen bg-beige p-6">
@@ -81,7 +79,6 @@ export const AdminLeads: React.FC = () => {
                     <td className="py-8 px-4">
                       <p className="font-bold text-forest mb-1">{lead.name}</p>
                       <p className="text-sm text-earth/60">{lead.phone}</p>
-                      <p className="text-[10px] text-earth/40 mt-2 uppercase font-bold">{lead.source}</p>
                     </td>
                     <td className="py-8 px-4">
                       {activeTab === 'stays' ? (

@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../../../lib/supabase/client';
+import { supabase } from '../../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
 const CATEGORIES = ['Rooms', 'Pool', 'Lawn', 'Night Vibes', 'Bar Garden'];
@@ -16,7 +15,6 @@ interface UploadJob {
 }
 
 export default function AdminGalleryPage() {
-  const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState<UploadJob[]>([]);
   const [globalCategory, setGlobalCategory] = useState('Rooms');
@@ -25,23 +23,20 @@ export default function AdminGalleryPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }: any) => {
-      setSession(session);
       setLoading(false);
       if (!session) navigate('/admin');
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-      setSession(session);
       if (!session) navigate('/admin');
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // Full implementation of upload logic
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-    const newJobs: UploadJob[] = Array.from(e.target.files).map(file => ({
+    const newJobs: UploadJob[] = Array.from(e.target.files).map((file: File) => ({
       id: Math.random().toString(36).substr(2, 9),
       file,
       title: file.name.split('.')[0],

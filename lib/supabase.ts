@@ -1,118 +1,36 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * PRODUCTION SUPABASE SETUP (Run in SQL Editor):
- * 
- * -- 1. Storage Buckets
- * INSERT INTO storage.buckets (id, name, public) VALUES ('gallery', 'gallery', true) ON CONFLICT (id) DO NOTHING;
- * INSERT INTO storage.buckets (id, name, public) VALUES ('branding', 'branding', true) ON CONFLICT (id) DO NOTHING;
- * 
- * -- 2. Tables
- * CREATE TABLE IF NOT EXISTS public.admin_users (
- *   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
- *   email TEXT UNIQUE NOT NULL
- * );
- * 
- * CREATE TABLE IF NOT EXISTS public.gallery_images (
- *   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
- *   created_at TIMESTAMPTZ DEFAULT now(),
- *   title TEXT NOT NULL,
- *   category TEXT NOT NULL,
- *   storage_path TEXT NOT NULL,
- *   sort_order INT DEFAULT 0,
- *   url TEXT NOT NULL,
- *   featured BOOLEAN DEFAULT false
- * );
- * 
- * CREATE TABLE IF NOT EXISTS public.site_settings (
- *   id INT PRIMARY KEY DEFAULT 1,
- *   updated_at TIMESTAMPTZ DEFAULT now(),
- *   brand_name TEXT DEFAULT 'Wood Heaven Farms',
- *   hero_title TEXT DEFAULT 'Welcome to Heaven',
- *   hero_subtitle TEXT,
- *   tagline TEXT DEFAULT 'Estd. 2024 • Luxury Farmhouse',
- *   logo_url TEXT,
- *   hero_image_url TEXT,
- *   hero_video_url TEXT,
- *   whatsapp_number TEXT DEFAULT '919876543210',
- *   address_text TEXT DEFAULT '123 Farmhouse Lane, NCR'
- * );
- * 
- * CREATE TABLE IF NOT EXISTS public.testimonials (
- *   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
- *   name TEXT NOT NULL,
- *   context TEXT,
- *   text TEXT NOT NULL,
- *   image TEXT
- * );
- * 
- * CREATE TABLE IF NOT EXISTS public.highlights (
- *   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
- *   name TEXT NOT NULL,
- *   icon TEXT, 
- *   sort_order INT DEFAULT 0
- * );
- * 
- * CREATE TABLE IF NOT EXISTS public.faqs (
- *   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
- *   question TEXT NOT NULL,
- *   answer TEXT NOT NULL,
- *   sort_order INT DEFAULT 0
- * );
- * 
- * CREATE TABLE IF NOT EXISTS public.stay_enquiries (
- *   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
- *   created_at TIMESTAMPTZ DEFAULT now(),
- *   name TEXT NOT NULL,
- *   phone TEXT NOT NULL,
- *   checkin DATE NOT NULL,
- *   checkout DATE NOT NULL,
- *   guests INT,
- *   message TEXT,
- *   source TEXT,
- *   status TEXT DEFAULT 'new'
- * );
- * 
- * CREATE TABLE IF NOT EXISTS public.event_enquiries (
- *   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
- *   created_at TIMESTAMPTZ DEFAULT now(),
- *   name TEXT NOT NULL,
- *   phone TEXT NOT NULL,
- *   event_date DATE NOT NULL,
- *   event_type TEXT NOT NULL,
- *   guests INT,
- *   requirements TEXT,
- *   source TEXT,
- *   status TEXT DEFAULT 'new'
- * );
- * 
- * -- 3. Policies
- * ALTER TABLE public.gallery_images ENABLE ROW LEVEL SECURITY;
- * CREATE POLICY "Public read gallery" ON public.gallery_images FOR SELECT USING (true);
- * CREATE POLICY "Admin manage gallery" ON public.gallery_images FOR ALL USING (auth.role() = 'authenticated');
+ * Safely retrieves environment variables from various possible sources.
+ * In Vite, variables are on import.meta.env.
+ * In other environments (like Node.js or older builders), they might be on process.env.
  */
-
-const getEnv = (key: string) => {
-  // Vite environment variables
-  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
-    const val = (import.meta as any).env[key];
-    if (val) return val;
-  }
-  
-  // Standard process.env fallback (for Vercel/Node environments)
+const getEnvVar = (key: string): string => {
   try {
-    if (typeof process !== 'undefined' && process.env) {
-      return process.env[key];
+    // 1. Try Vite's import.meta.env
+    const meta = import.meta as any;
+    if (meta && meta.env && meta.env[key]) {
+      return meta.env[key];
     }
-  } catch {
-    // ignore
+    
+    // 2. Try Node's process.env (as a fallback for certain build/test environments)
+    if (typeof process !== 'undefined' && process.env && (process.env as any)[key]) {
+      return (process.env as any)[key];
+    }
+  } catch (err) {
+    // Silently handle cases where meta or process might be inaccessible
   }
-  return null;
+  return '';
 };
 
-const supabaseUrl = getEnv('VITE_SUPABASE_URL') || getEnv('NEXT_PUBLIC_SUPABASE_URL') || '';
-const supabaseKey = getEnv('VITE_SUPABASE_ANON_KEY') || getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY') || '';
+// Check for both Vite-specific and Next.js-style prefixes for maximum compatibility
+const supabaseUrl = getEnvVar('VITE_SUPABASE_URL') || getEnvVar('NEXT_PUBLIC_SUPABASE_URL') || '';
+const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY') || getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY') || '';
 
+/**
+ * Fallback mock for when Supabase credentials are missing.
+ * Prevents the application from crashing while displaying placeholders.
+ */
 const createMockBuilder = (data: any = []) => {
   const promise = Promise.resolve({ data, error: null });
   const builder: any = {
@@ -122,6 +40,7 @@ const createMockBuilder = (data: any = []) => {
     select: () => builder,
     insert: () => builder,
     update: () => builder,
+    upsert: () => builder,
     delete: () => builder,
     eq: () => builder,
     match: () => builder,

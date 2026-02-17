@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const TABLES = ['highlights', 'testimonials', 'faqs', 'offers'];
 
@@ -10,7 +8,6 @@ export const AdminContent: React.FC = () => {
   const [activeTable, setActiveTable] = useState<string>('testimonials');
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingItem, setEditingItem] = useState<any>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,7 +17,6 @@ export const AdminContent: React.FC = () => {
     });
   }, [activeTable]);
 
-  // Full implementation of fetch content logic
   const fetchContent = async () => {
     setLoading(true);
     try {
@@ -42,7 +38,7 @@ export const AdminContent: React.FC = () => {
     if (!error) fetchContent();
   };
 
-  if (loading) return null;
+  if (loading) return <div className="p-20 text-center font-serif">Syncing content...</div>;
 
   return (
     <div className="pt-24 min-h-screen bg-beige p-6">
@@ -64,11 +60,6 @@ export const AdminContent: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <button className="h-64 border-4 border-dashed border-earth/10 rounded-[2rem] flex flex-col items-center justify-center text-earth/20 hover:text-earth/40 hover:border-earth/20 transition-all">
-              <span className="text-4xl mb-4">+</span>
-              <span className="text-[10px] uppercase tracking-widest font-bold">Add New Item</span>
-            </button>
-            
             {items.map((item) => (
               <div key={item.id} className="bg-beige/40 p-8 rounded-[2rem] border border-white group relative">
                 <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">

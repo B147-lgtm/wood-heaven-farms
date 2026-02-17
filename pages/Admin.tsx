@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase.ts';
+import { supabase } from '../lib/supabase';
 import { useNavigate, Link } from 'react-router-dom';
 
 export const Admin: React.FC = () => {
-  const [isAuth, setIsAuth] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
@@ -27,7 +25,6 @@ export const Admin: React.FC = () => {
         .single();
 
       if (adminUser) {
-        setIsAuth(true);
         setIsAuthorized(true);
       } else {
         await supabase.auth.signOut();
@@ -55,7 +52,6 @@ export const Admin: React.FC = () => {
         .single();
 
       if (adminUser) {
-        setIsAuth(true);
         setIsAuthorized(true);
       } else {
         await supabase.auth.signOut();
@@ -66,7 +62,6 @@ export const Admin: React.FC = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    setIsAuth(false);
     setIsAuthorized(false);
   };
 
@@ -113,7 +108,7 @@ export const Admin: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-16 gap-8">
           <div>
             <h1 className="text-5xl font-serif text-forest mb-2">Dashboard</h1>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-earth/40 font-bold">Welcome back to the Command Center.</p>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-earth/40 font-bold">Welcome back back to the Command Center.</p>
           </div>
           <button onClick={handleLogout} className="px-8 py-3 bg-red-50 text-red-500 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all shadow-sm">
             Logout Session

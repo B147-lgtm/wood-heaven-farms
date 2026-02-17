@@ -19,6 +19,7 @@ export default function AdminBrandingPage() {
     address_text: '631,632, green triveni, Opp. ashiana greens, sikar road, Jaipur - 302013',
     instagram_url: '',
     airbnb_url: '',
+    booking_url: '',
     email_address: 'woodheavenfarms@gmail.com'
   });
   const navigate = useNavigate();
@@ -60,7 +61,7 @@ export default function AdminBrandingPage() {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${field}-${Date.now()}.${fileExt}`;
-      const filePath = `assets/${fileName}`; // Updated to assets/ as requested
+      const filePath = `assets/${fileName}`; 
       const { error: uploadError } = await supabase.storage.from('branding').upload(filePath, file);
       if (uploadError) throw uploadError;
       const { data: { publicUrl } } = supabase.storage.from('branding').getPublicUrl(filePath);
@@ -77,13 +78,11 @@ export default function AdminBrandingPage() {
     setSaving(true);
     try {
       const payload = { ...settings, updated_at: new Date().toISOString() };
-      
-      // If we have a UUID id, use it for the update. Otherwise Supabase upsert will create new.
       const { error } = await supabase.from('site_settings').upsert(payload);
       
       if (error) throw error;
       alert('Success: Site settings updated.');
-      fetchSettings(); // Refresh to get the generated UUID if it was a new record
+      fetchSettings();
     } catch (err: any) {
       alert('Error: ' + err.message);
     } finally {
@@ -166,7 +165,25 @@ export default function AdminBrandingPage() {
               </div>
 
               <div className="bg-beige/30 p-8 rounded-[2rem] border border-white">
-                <h3 className="text-xl font-serif text-forest mb-6">Contact & Social</h3>
+                <h3 className="text-xl font-serif text-forest mb-6">External Listings</h3>
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[9px] uppercase tracking-widest font-bold text-earth/40">Airbnb URL</label>
+                    <input value={settings.airbnb_url || ''} onChange={e => setSettings({...settings, airbnb_url: e.target.value})} placeholder="https://www.airbnb.com/rooms/..." className="w-full bg-white border-none rounded-2xl px-6 py-4 text-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[9px] uppercase tracking-widest font-bold text-earth/40">Booking.com URL</label>
+                    <input value={settings.booking_url || ''} onChange={e => setSettings({...settings, booking_url: e.target.value})} placeholder="https://www.booking.com/hotel/..." className="w-full bg-white border-none rounded-2xl px-6 py-4 text-sm" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[9px] uppercase tracking-widest font-bold text-earth/40">Instagram URL</label>
+                    <input value={settings.instagram_url || ''} onChange={e => setSettings({...settings, instagram_url: e.target.value})} placeholder="https://instagram.com/..." className="w-full bg-white border-none rounded-2xl px-6 py-4 text-sm" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-beige/30 p-8 rounded-[2rem] border border-white">
+                <h3 className="text-xl font-serif text-forest mb-6">Contact Details</h3>
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -185,13 +202,6 @@ export default function AdminBrandingPage() {
                   <div className="space-y-2">
                     <label className="text-[9px] uppercase tracking-widest font-bold text-earth/40">Address Text</label>
                     <input value={settings.address_text} onChange={e => setSettings({...settings, address_text: e.target.value})} className="w-full bg-white border-none rounded-2xl px-6 py-4 text-sm" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[9px] uppercase tracking-widest font-bold text-earth/40">Brochure PDF</label>
-                    <div className="flex items-center gap-4">
-                       <input type="file" className="text-xs" accept=".pdf" onChange={e => handleFileUpload(e, 'brochure_url')} />
-                       {settings.brochure_url && <span className="text-green-600 font-bold text-[10px]">✓ Loaded</span>}
-                    </div>
                   </div>
                 </div>
               </div>

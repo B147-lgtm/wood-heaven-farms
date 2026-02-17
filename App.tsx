@@ -1,19 +1,18 @@
-
 import React, { useEffect, Suspense } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { Layout } from './components/Layout.tsx';
-import { Home } from './pages/Home.tsx';
-import { Stay } from './pages/Stay.tsx';
-import { Events } from './pages/Events.tsx';
-import { Gallery } from './pages/Gallery.tsx';
-import { Contact } from './pages/Contact.tsx';
-import { Admin } from './pages/Admin.tsx';
-import { AdminLeads } from './pages/AdminLeads.tsx';
-import { AdminContent } from './pages/AdminContent.tsx';
+import { Layout } from './components/Layout';
+import { Home } from './pages/Home';
+import { Stay } from './pages/Stay';
+import { Events } from './pages/Events';
+import { Gallery } from './pages/Gallery';
+import { Contact } from './pages/Contact';
+import { Admin } from './pages/Admin';
+import { AdminLeads } from './pages/AdminLeads';
+import { AdminContent } from './pages/AdminContent';
 
 // Lazy load specific admin tools
-const AdminGalleryPage = React.lazy(() => import('./app/admin/gallery/page.tsx'));
-const AdminBrandingPage = React.lazy(() => import('./app/admin/branding/page.tsx'));
+const AdminGalleryPage = React.lazy(() => import('./app/admin/gallery/page'));
+const AdminBrandingPage = React.lazy(() => import('./app/admin/branding/page'));
 
 const ScrollToTop: React.FC = () => {
   const { pathname } = useLocation();

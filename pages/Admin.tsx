@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { checkIsAdmin } from '../lib/adminGuard';
@@ -13,10 +14,14 @@ export const Admin: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const url = (import.meta as any).env?.VITE_SUPABASE_URL;
-    setHasKeys(!!url);
-    verifyAdmin();
-  }, []);
+  const env = (import.meta as any)?.env;
+  const url = env?.VITE_SUPABASE_URL;
+  const key = env?.VITE_SUPABASE_ANON_KEY;
+
+  setHasKeys(!!(url && key));
+  checkUser();
+}, []);
+
 
   const verifyAdmin = async () => {
     setLoading(true);
@@ -28,6 +33,16 @@ export const Admin: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
+    
+    // Check NODE_ENV instead of import.meta.env.PROD
+    const isProd = process.env.NODE_ENV === 'production';
+
+    // Prevent even attempting a login if keys are missing in production
+    if (isProd && !hasKeys) {
+      setAuthError('System Configuration Error: Security keys missing.');
+      return;
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     
     if (error) {
@@ -48,6 +63,9 @@ export const Admin: React.FC = () => {
     navigate('/');
   };
 
+  // Use NODE_ENV check
+  const isProduction = process.env.NODE_ENV === 'production';
+
   if (loading) return <div className="min-h-screen bg-forest flex items-center justify-center text-white font-serif text-2xl">Checking Heaven's Gate...</div>;
 
   if (!isAuthorized) {
@@ -59,10 +77,17 @@ export const Admin: React.FC = () => {
             <p className="text-[10px] uppercase tracking-[0.4em] text-earth/40 font-bold">Wood Heaven Farms</p>
           </div>
           
-          {!hasKeys && (
+          {!hasKeys && !isProduction && (
             <div className="mb-8 p-4 bg-yellow-50 border border-yellow-100 rounded-2xl">
               <p className="text-[10px] text-yellow-800 font-bold uppercase tracking-widest mb-1">Local Mode</p>
               <p className="text-[11px] text-yellow-700 leading-relaxed">Backend keys missing. Using test account (admin@woodheaven.com).</p>
+            </div>
+          )}
+
+          {isProduction && !hasKeys && (
+            <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl">
+              <p className="text-[10px] text-red-800 font-bold uppercase tracking-widest mb-1">Configuration Error</p>
+              <p className="text-[11px] text-red-700 leading-relaxed">Production environment variables (VITE_SUPABASE_URL/KEY) are missing.</p>
             </div>
           )}
 
@@ -74,6 +99,7 @@ export const Admin: React.FC = () => {
                 type="email" placeholder="admin@woodheaven.com" 
                 className="w-full bg-beige border-none px-6 py-4 rounded-2xl text-sm focus:ring-2 focus:ring-forest"
                 value={email} onChange={e => setEmail(e.target.value)}
+                disabled={isProduction && !hasKeys}
               />
             </div>
             <div className="space-y-2">
@@ -82,9 +108,14 @@ export const Admin: React.FC = () => {
                 type="password" placeholder="••••••••" 
                 className="w-full bg-beige border-none px-6 py-4 rounded-2xl text-sm focus:ring-2 focus:ring-forest"
                 value={password} onChange={e => setPassword(e.target.value)}
+                disabled={isProduction && !hasKeys}
               />
             </div>
-            <button className="w-full bg-forest text-white py-5 rounded-full font-bold uppercase tracking-widest hover:bg-[#c5a059] transition-all shadow-xl text-xs">
+            <button 
+              type="submit"
+              disabled={isProduction && !hasKeys}
+              className="w-full bg-forest text-white py-5 rounded-full font-bold uppercase tracking-widest hover:bg-[#c5a059] transition-all shadow-xl text-xs disabled:opacity-50"
+            >
               Secure Login
             </button>
           </form>

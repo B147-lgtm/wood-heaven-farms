@@ -16,9 +16,15 @@ export const Stay: React.FC = () => {
   const [settings, setSettings] = useState<any>(null);
 
   useEffect(() => {
-    supabase.from('site_settings').select('*').eq('id', 1).single().then(({ data }: any) => {
-      if (data) setSettings(data);
-    });
+    // Get the most recent site settings
+    supabase.from('site_settings')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }: any) => {
+        if (data) setSettings(data);
+      });
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,8 +45,15 @@ export const Stay: React.FC = () => {
       const whatsappNum = settings?.whatsapp_number || '918852021119';
       const waMessage = `Hi Wood Heaven Farms! I want to book a stay.\nName: ${formData.name}\nDates: ${formData.checkin} to ${formData.checkout}\nGuests: ${formData.guests}`;
       window.open(`https://wa.me/${whatsappNum}?text=${encodeURIComponent(waMessage)}`, '_blank');
+    } else {
+      console.error('Submission error:', error);
+      setStatus('idle');
+      alert('Something went wrong. Please try again.');
     }
   };
+
+  const airbnbUrl = settings?.airbnb_url || 'https://www.airbnb.com/rooms/1149468945691456184'; // Example actual ID or fallback
+  const bookingUrl = settings?.booking_url || 'https://www.booking.com/hotel/in/wood-heaven-farms.html';
 
   return (
     <div className="pt-24">
@@ -206,8 +219,22 @@ export const Stay: React.FC = () => {
                 <div className="text-center pt-4">
                   <span className="text-[10px] text-earth/40 uppercase tracking-widest block mb-4">Or discover us on</span>
                   <div className="flex justify-center gap-4">
-                    <a href="#" className="px-6 py-2 border border-beige rounded-full text-[10px] font-bold text-earth/60 hover:border-earth/20 transition-all">Airbnb</a>
-                    <a href="#" className="px-6 py-2 border border-beige rounded-full text-[10px] font-bold text-earth/60 hover:border-earth/20 transition-all">Booking.com</a>
+                    <a 
+                      href={airbnbUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="px-6 py-2 border border-beige rounded-full text-[10px] font-bold text-earth/60 hover:border-earth/20 hover:bg-beige/10 transition-all"
+                    >
+                      Airbnb
+                    </a>
+                    <a 
+                      href={bookingUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="px-6 py-2 border border-beige rounded-full text-[10px] font-bold text-earth/60 hover:border-earth/20 hover:bg-beige/10 transition-all"
+                    >
+                      Booking.com
+                    </a>
                   </div>
                 </div>
               </form>

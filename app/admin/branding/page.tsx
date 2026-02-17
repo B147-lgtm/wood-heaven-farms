@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { checkIsAdmin } from '../../../lib/adminGuard';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminBrandingPage() {
@@ -23,15 +24,27 @@ export default function AdminBrandingPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }: any) => {
-      if (!session) navigate('/admin');
-      fetchSettings();
-    });
+    verifyAccess();
   }, [navigate]);
+
+  const verifyAccess = async () => {
+    const isAdmin = await checkIsAdmin();
+    if (!isAdmin) {
+      navigate('/admin');
+      return;
+    }
+    fetchSettings();
+  };
 
   const fetchSettings = async () => {
     try {
-      const { data, error } = await supabase.from('site_settings').select('*').eq('id', 1).single();
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
       if (data) setSettings(data);
     } catch (err) {
       console.error('Error fetching settings:', err);
@@ -47,7 +60,7 @@ export default function AdminBrandingPage() {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${field}-${Date.now()}.${fileExt}`;
-      const filePath = `branding/${fileName}`;
+      const filePath = `assets/${fileName}`; // Updated to assets/ as requested
       const { error: uploadError } = await supabase.storage.from('branding').upload(filePath, file);
       if (uploadError) throw uploadError;
       const { data: { publicUrl } } = supabase.storage.from('branding').getPublicUrl(filePath);
@@ -63,9 +76,14 @@ export default function AdminBrandingPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const { error } = await supabase.from('site_settings').upsert({ id: 1, ...settings, updated_at: new Date().toISOString() });
+      const payload = { ...settings, updated_at: new Date().toISOString() };
+      
+      // If we have a UUID id, use it for the update. Otherwise Supabase upsert will create new.
+      const { error } = await supabase.from('site_settings').upsert(payload);
+      
       if (error) throw error;
       alert('Success: Site settings updated.');
+      fetchSettings(); // Refresh to get the generated UUID if it was a new record
     } catch (err: any) {
       alert('Error: ' + err.message);
     } finally {

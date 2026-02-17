@@ -12,6 +12,12 @@ const getEnvVar = (key: string): string => {
 const supabaseUrl = getEnvVar('VITE_SUPABASE_URL') || getEnvVar('NEXT_PUBLIC_SUPABASE_URL') || '';
 const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY') || getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY') || '';
 
+const isProd = getEnvVar('NODE_ENV') === 'production';
+
+if (isProd && (!supabaseUrl || !supabaseKey)) {
+  throw new Error('Supabase production keys missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+}
+
 // Mocking function for local development without keys
 const createMockBuilder = (data: any = []) => {
   const promise = Promise.resolve({ data, error: null });
@@ -27,14 +33,15 @@ const createMockBuilder = (data: any = []) => {
     eq: () => builder,
     match: () => builder,
     order: () => builder,
+    limit: () => builder,
     single: () => createMockBuilder(Array.isArray(data) ? (data[0] || {}) : data),
+    maybeSingle: () => createMockBuilder(Array.isArray(data) ? (data[0] || null) : data),
     data,
     error: null
   };
   return builder;
 };
 
-// Real client initialization
 export const supabase = (supabaseUrl && supabaseKey) 
   ? createClient(supabaseUrl, supabaseKey)
   : {

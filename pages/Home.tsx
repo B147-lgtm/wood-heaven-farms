@@ -28,7 +28,7 @@ export const Home: React.FC = () => {
   const categories = ['All', 'Rooms', 'Pool', 'Lawn', 'Bar Garden'];
 
   useEffect(() => {
-    supabase.from('site_settings').select('*').eq('id', 1).single().then(({ data }: any) => {
+    supabase.from('site_settings').select('*').order('updated_at', { ascending: false }).limit(1).maybeSingle().then(({ data }: any) => {
       if (data) setSettings(data);
     });
 

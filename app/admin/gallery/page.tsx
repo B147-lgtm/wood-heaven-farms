@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { checkIsAdmin } from '../../../lib/adminGuard';
 import { useNavigate } from 'react-router-dom';
 
 const CATEGORIES = ['Rooms', 'Pool', 'Lawn', 'Night Vibes', 'Bar Garden'];
@@ -22,17 +23,17 @@ export default function AdminGalleryPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }: any) => {
-      setLoading(false);
-      if (!session) navigate('/admin');
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-      if (!session) navigate('/admin');
-    });
-
-    return () => subscription.unsubscribe();
+    verifyAccess();
   }, [navigate]);
+
+  const verifyAccess = async () => {
+    const isAdmin = await checkIsAdmin();
+    if (!isAdmin) {
+      navigate('/admin');
+    } else {
+      setLoading(false);
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;

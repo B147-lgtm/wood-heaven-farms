@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
+import { checkIsAdmin } from '../lib/adminGuard';
 import { useNavigate } from 'react-router-dom';
 
 const TABLES = [
@@ -31,11 +32,17 @@ export const AdminContent: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }: any) => {
-      if (!session) navigate('/admin');
-      fetchContent();
-    });
+    verifyAccess();
   }, [activeTable, navigate]);
+
+  const verifyAccess = async () => {
+    const isAdmin = await checkIsAdmin();
+    if (!isAdmin) {
+      navigate('/admin');
+    } else {
+      fetchContent();
+    }
+  };
 
   const fetchContent = async () => {
     setLoading(true);

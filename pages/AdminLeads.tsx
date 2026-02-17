@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { checkIsAdmin } from '../lib/adminGuard';
 import { useNavigate } from 'react-router-dom';
 
 export const AdminLeads: React.FC = () => {
@@ -10,11 +11,17 @@ export const AdminLeads: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }: any) => {
-      if (!session) navigate('/admin');
-      fetchLeads();
-    });
+    verifyAccess();
   }, [navigate]);
+
+  const verifyAccess = async () => {
+    const isAdmin = await checkIsAdmin();
+    if (!isAdmin) {
+      navigate('/admin');
+    } else {
+      fetchLeads();
+    }
+  };
 
   const fetchLeads = async () => {
     setLoading(true);

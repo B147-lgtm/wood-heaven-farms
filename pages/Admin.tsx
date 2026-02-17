@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { checkIsAdmin } from '../lib/adminGuard';
 import { useNavigate, Link } from 'react-router-dom';
 
 export const Admin: React.FC = () => {
@@ -9,20 +10,18 @@ export const Admin: React.FC = () => {
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [hasKeys, setHasKeys] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if real keys are present
     const url = (import.meta as any).env?.VITE_SUPABASE_URL;
     setHasKeys(!!url);
-    checkUser();
+    verifyAdmin();
   }, []);
 
-  const checkUser = async () => {
+  const verifyAdmin = async () => {
     setLoading(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      setIsAuthorized(true);
-    }
+    const isAdmin = await checkIsAdmin();
+    setIsAuthorized(isAdmin);
     setLoading(false);
   };
 
@@ -30,16 +29,23 @@ export const Admin: React.FC = () => {
     e.preventDefault();
     setAuthError('');
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    
     if (error) {
       setAuthError(error.message);
     } else if (data.user) {
-      setIsAuthorized(true);
+      const isAdmin = await checkIsAdmin();
+      if (isAdmin) {
+        setIsAuthorized(true);
+      } else {
+        setAuthError('Unauthorized: Access denied.');
+      }
     }
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setIsAuthorized(false);
+    navigate('/');
   };
 
   if (loading) return <div className="min-h-screen bg-forest flex items-center justify-center text-white font-serif text-2xl">Checking Heaven's Gate...</div>;
@@ -82,6 +88,9 @@ export const Admin: React.FC = () => {
               Secure Login
             </button>
           </form>
+          <div className="mt-8 text-center">
+            <Link to="/" className="text-[9px] uppercase tracking-widest text-earth/40 font-bold hover:text-forest transition-colors">Return to Website</Link>
+          </div>
         </div>
       </div>
     );
@@ -131,8 +140,8 @@ export const Admin: React.FC = () => {
               <h4 className="text-4xl font-serif text-forest">128</h4>
             </div>
             <div className="bg-beige/30 p-8 rounded-3xl border border-white">
-              <p className="text-[10px] uppercase tracking-widest font-bold text-earth/40 mb-2">Last Update</p>
-              <h4 className="text-xl font-serif text-forest">2 mins ago</h4>
+              <p className="text-[10px] uppercase tracking-widest font-bold text-earth/40 mb-2">System Status</p>
+              <h4 className="text-xl font-serif text-green-600">Secure & Online</h4>
             </div>
           </div>
         </div>

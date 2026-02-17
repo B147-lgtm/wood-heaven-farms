@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 // REPLACE THESE URLS with your actual file paths or Supabase Storage URLs
@@ -132,18 +131,21 @@ export const TESTIMONIALS = [
   {
     name: "Aditi Sharma",
     context: "Corporate Retreat",
+    rating: 5,
     text: "The absolute perfect getaway for our leadership offsite. The peace and tranquility of the property allowed for deep focus, while the pool area was the highlight of our evenings.",
     image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200"
   },
   {
     name: "Vikram Mehta",
     context: "Wedding Celebration",
+    rating: 5,
     text: "Hosted my sister's mehendi at the Royal Front Lawn. The staff was incredibly attentive, and the lighting at night turned the farm into a fairytale. Truly a heaven on earth.",
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200"
   },
   {
     name: "Sneha Kapoor",
     context: "Family Weekend",
+    rating: 5,
     text: "We booked the entire property for a family reunion. Having 8 suites meant everyone had their own space, but the large dining hall brought us all together. Simply spectacular.",
     image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200"
   }

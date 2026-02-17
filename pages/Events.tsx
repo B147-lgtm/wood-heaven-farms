@@ -1,13 +1,12 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { EventType } from '../types';
 
 const EVENT_SPACES = [
-  { name: 'Royal Front Lawn', capacity: '300 Guests', desc: 'Lush green expanse perfect for large wedding functions.' },
-  { name: 'Secret Bar Garden', capacity: '50 Guests', desc: 'An intimate, wooden-themed space for cocktail nights.' },
-  { name: 'Poolside Deck', capacity: '80 Guests', desc: 'Tropical vibes for birthdays and sundowners.' },
+  { name: 'Royal Front Lawn', capacity: '100-150 Guests', desc: 'Lush green expanse perfect for large wedding functions and grand gatherings.' },
+  { name: 'Secret Bar Garden', capacity: '50-80 Guests', desc: 'An intimate, wooden-themed space for cocktail nights and boutique celebrations.' },
+  { name: 'Poolside Deck', capacity: 'Upto 40 Guests', desc: 'Tropical vibes for birthdays, sundowners, and relaxed social mixers.' },
 ];
 
 export const Events: React.FC = () => {
@@ -20,6 +19,13 @@ export const Events: React.FC = () => {
     requirements: '',
   });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [settings, setSettings] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.from('site_settings').select('*').eq('id', 1).single().then(({ data }: any) => {
+      if (data) setSettings(data);
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,8 +42,9 @@ export const Events: React.FC = () => {
 
     if (!error) {
       setStatus('success');
+      const whatsappNum = settings?.whatsapp_number || '918852021119';
       const waMessage = `Hi! Planning an event at Wood Heaven Farms.\nType: ${formData.event_type}\nDate: ${formData.event_date}\nGuests: ${formData.guests}`;
-      window.open(`https://wa.me/919876543210?text=${encodeURIComponent(waMessage)}`, '_blank');
+      window.open(`https://wa.me/${whatsappNum}?text=${encodeURIComponent(waMessage)}`, '_blank');
     }
   };
 

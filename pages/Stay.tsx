@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { AMENITY_GROUPS } from '../constants';
 import { supabase } from '../lib/supabase';
@@ -14,12 +13,18 @@ export const Stay: React.FC = () => {
     message: '',
   });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [settings, setSettings] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.from('site_settings').select('*').eq('id', 1).single().then(({ data }: any) => {
+      if (data) setSettings(data);
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('loading');
     
-    // UTM Capture (Simple)
     const urlParams = new URLSearchParams(window.location.search);
     const utm_source = urlParams.get('utm_source') || 'direct';
 
@@ -31,9 +36,9 @@ export const Stay: React.FC = () => {
 
     if (!error) {
       setStatus('success');
-      // Trigger WhatsApp
+      const whatsappNum = settings?.whatsapp_number || '918852021119';
       const waMessage = `Hi Wood Heaven Farms! I want to book a stay.\nName: ${formData.name}\nDates: ${formData.checkin} to ${formData.checkout}\nGuests: ${formData.guests}`;
-      window.open(`https://wa.me/919876543210?text=${encodeURIComponent(waMessage)}`, '_blank');
+      window.open(`https://wa.me/${whatsappNum}?text=${encodeURIComponent(waMessage)}`, '_blank');
     }
   };
 

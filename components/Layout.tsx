@@ -122,8 +122,11 @@ const Navbar = ({ settings }: { settings: any }) => {
 
 const Footer = ({ settings }: { settings: any }) => {
   const brandName = settings?.brand_name || 'Wood Heaven Farms';
-  const whatsapp = settings?.whatsapp_number || '919876543210';
+  const whatsapp = settings?.whatsapp_number || '918852021119';
+  const phone = settings?.phone_number || '+91 88520 21119';
+  const email = settings?.email_address || 'woodheavenfarms@gmail.com';
   const logo = settings?.logo_url || BRAND_ASSETS.logo;
+  const address = settings?.address_text || '631,632, green triveni, Opp. ashiana greens, sikar road, Jaipur - 302013';
 
   return (
     <footer className="bg-forest text-white py-24 px-6">
@@ -158,9 +161,9 @@ const Footer = ({ settings }: { settings: any }) => {
         <div>
           <h4 className="text-sm font-bold uppercase tracking-[0.2em] mb-8 text-[#c5a059]">Contact Us</h4>
           <div className="flex flex-col gap-4 text-white/50 text-sm">
-            <p>{settings?.address_text || '123 Farmhouse Lane, NCR'}</p>
-            <p className="hover:text-white transition-colors cursor-pointer">+{whatsapp}</p>
-            <p className="hover:text-white transition-colors cursor-pointer">hello@woodheaven.com</p>
+            <p>{address}</p>
+            <p className="hover:text-white transition-colors cursor-pointer">{phone}</p>
+            <p className="hover:text-white transition-colors cursor-pointer">{email}</p>
           </div>
         </div>
       </div>
@@ -192,7 +195,7 @@ export const Layout = ({ children }: { children?: React.ReactNode }) => {
         <motion.a 
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          href={`https://wa.me/${settings?.whatsapp_number || '919876543210'}?text=Hi, I'm interested in booking ${settings?.brand_name || 'Wood Heaven Farms'}.`}
+          href={`https://wa.me/${settings?.whatsapp_number || '918852021119'}?text=Hi, I'm interested in booking ${settings?.brand_name || 'Wood Heaven Farms'}.`}
           target="_blank"
           rel="noopener noreferrer"
           className="bg-[#25D366] text-white p-4 rounded-full shadow-2xl transition-transform flex items-center justify-center"
